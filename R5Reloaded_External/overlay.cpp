@@ -273,6 +273,7 @@ struct VehiclePersonel {
     uint64_t id;
     float x, y, z;
     std::vector<std::string> names;
+    Vector2 screenPosition;
     bool horse;
 
     void addName(const std::string& name) {
@@ -464,6 +465,7 @@ void Overlay::m_ESP()
                 
 
             bool vehicleExist = false;
+            WorldToScreen(vehiclePosition, vScreenPosition);
 
             for (VehiclePersonel& vec : vehicles) {
                 if (vec.id == clientSoldierEntity){//(vehiclePosition.x > vec.x - 1 && vehiclePosition.x < vec.x + 1 && vehiclePosition.y > vec.y - 1 && vehiclePosition.y < vec.y + 1) {
@@ -476,6 +478,7 @@ void Overlay::m_ESP()
                 VehiclePersonel vehicle = { vehiclePosition.x, vehiclePosition.y, vehiclePosition.z };
                 vehicle.addName(pName);
                 vehicle.id = clientSoldierEntity;
+                vehicle.screenPosition = vScreenPosition;
 
                 if (horse)
                     vehicle.horse = true;
@@ -519,7 +522,7 @@ void Overlay::m_ESP()
             DrawLine(ImVec2(GameRect.right / 2.f, GameRect.bottom), ImVec2(ScreenPosition.x, ScreenPosition.y), color, 1.f);
 
         
-
+    /*
         // Box—p
         Vector3 BoxTop = Position + GetAABB(clientSoldierEntity).Max;
         Vector3 BoxBottom = Position + GetAABB(clientSoldierEntity).Min;
@@ -542,33 +545,11 @@ void Overlay::m_ESP()
             DrawLine(ImVec2(BoxMiddle + (Width / 2.f), vTop.y), ImVec2(BoxMiddle + (Width / 2.f), ScreenPosition.y), color, 1.f);
             DrawLine(ImVec2(BoxMiddle - (Width / 2.f), vTop.y), ImVec2(BoxMiddle - (Width / 2.f), ScreenPosition.y), color, 1.f);
         }
-
-        WorldToScreen(vehiclePosition, vScreenPosition);
-
-        Vector3 vBoxTop = vehiclePosition + Vector4(0.350000f, 1.700000f, 0.350000f, 0);
-        Vector3 vBoxBottom = vehiclePosition + Vector4(-0.350000f, 0.000000f, -0.350000f, 0);
-        Vector2 vvTop;
-        Vector2 vvBom;
-        WorldToScreen(vBoxTop, vvTop);
-        WorldToScreen(vBoxBottom, vvBom);
-
-        float vBoxMiddle = vScreenPosition.x;
-        float vHeight = vvBom.y - vvTop.y;
-        float vWidth = vHeight / 2.f;
-
-        if (inVehicle) {
-            DrawLine(ImVec2(vBoxMiddle + (vWidth / 2.f), vvTop.y), ImVec2(vBoxMiddle - (vWidth / 2.f), vvTop.y), color, 1.f);
-            DrawLine(ImVec2(vBoxMiddle + (vWidth / 2.f), vScreenPosition.y), ImVec2(vBoxMiddle - (vWidth / 2.f), vScreenPosition.y), color, 1.f);
-            DrawLine(ImVec2(vBoxMiddle + (vWidth / 2.f), vvTop.y), ImVec2(vBoxMiddle + (vWidth / 2.f), vScreenPosition.y), color, 1.f);
-            DrawLine(ImVec2(vBoxMiddle - (vWidth / 2.f), vvTop.y), ImVec2(vBoxMiddle - (vWidth / 2.f), vScreenPosition.y), color, 1.f);
-        }
+        
 
         // AIMBOT
         if (strstr(pName, target2) != nullptr){ //(g.aimbot) {
 
-        
-             /*   aim(clientSoldierEntity);
-            }*/
             ImVec2 point2(ScreenPosition.x, ScreenPosition.y - Width - (Width / 2.f) + y_offset);
             //std::cout << pName << std::endl;
 
@@ -593,7 +574,7 @@ void Overlay::m_ESP()
             }
 
         }
-
+        */
         
 
         if (false){ //(g.fovCircle) {
@@ -624,19 +605,36 @@ void Overlay::m_ESP()
     }
     std::string vContext;
 
-    for (VehiclePersonel& vec : vehicles) {
+    for (VehiclePersonel& vehicle : vehicles) {
         int nameOffset = 0;
 
-        for (std::string playerName : vec.names) {
+        for (std::string playerName : vehicle.names) {
             vContext = "";
             vContext = vContext + "|" + playerName;
 
             ImVec2 textSize = ImGui::CalcTextSize(vContext.c_str());
             float TextCentor = textSize.x / 2.f;
 
-            String(ImVec2(vScreenPosition.x - TextCentor, (vScreenPosition.y + nameOffset)), ImColor(1.f, 1.f, 1.f, 1.f), vContext.c_str());
+            String(ImVec2(vehicle.screenPosition.x - TextCentor, (vehicle.screenPosition.y + nameOffset)), ImColor(1.f, 1.f, 1.f, 1.f), vContext.c_str());
             nameOffset += 20;
         }
+
+        Vector3 vBoxTop = Vector3(vehicle.x, vehicle.y, vehicle.z) + Vector4(0.350000f, 1.700000f, 0.350000f, 0);
+        Vector3 vBoxBottom = Vector3(vehicle.x, vehicle.y, vehicle.z) + Vector4(-0.350000f, 0.000000f, -0.350000f, 0);
+        Vector2 vvTop;
+        Vector2 vvBom;
+        WorldToScreen(vBoxTop, vvTop);
+        WorldToScreen(vBoxBottom, vvBom);
+
+        float vBoxMiddle = vehicle.screenPosition.x;
+        float vHeight = vvBom.y - vvTop.y;
+        float vWidth = vHeight / 2.f;
+
+        DrawLine(ImVec2(vBoxMiddle + (vWidth / 2.f), vvTop.y), ImVec2(vBoxMiddle - (vWidth / 2.f), vvTop.y), ESP_Normal, 1.f);
+        //DrawLine(ImVec2(vBoxMiddle + (vWidth / 2.f), vehicle.screenPosition.y), ImVec2(vBoxMiddle - (vWidth / 2.f), vehicle.screenPosition.y), ESP_Normal, 1.f);
+        DrawLine(ImVec2(vBoxMiddle + (vWidth / 2.f), vvTop.y), ImVec2(vBoxMiddle + (vWidth / 2.f), vehicle.screenPosition.y), ESP_Normal, 1.f);
+        //DrawLine(ImVec2(vBoxMiddle - (vWidth / 2.f), vvTop.y), ImVec2(vBoxMiddle - (vWidth / 2.f), vehicle.screenPosition.y), ESP_Normal, 1.f);
+       
 
     }
     updateCnt++;
