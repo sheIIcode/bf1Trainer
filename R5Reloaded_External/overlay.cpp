@@ -362,7 +362,6 @@ void Overlay::m_ESP()
     float startAngle = 0.0f;
     float endAngle = 2 * 3.14159265f;
     float fovLineWidth = 1.0f;
-    Vector2 vScreenPosition = Vector2(0.f, 0.f);
 
     vehicles.clear();    
     
@@ -395,36 +394,8 @@ void Overlay::m_ESP()
             LocalPosition = m.Read<Vector3>(clientSoldierEntity + offset::location);
         }
 
-        if (strstr(pName, "DDFD") != nullptr)
-        {
-            std::cout << std::hex << Player << " : " << (Player + 0x1D38) << "\n"; //
-
-            uint64_t pcveoff = Player + 0x1D38;
-
-            uint64_t pcveaddr = m.Read<uint64_t>(pcveoff);
-
-            std::cout << std::hex << pcveaddr << "\n";
-
-            //Vehiclehealthcomponent = 0x1D0;
-            uint64_t vehdataOff = pcveaddr + 0x30;
-            std::cout << std::hex << vehdataOff << "\n";
-
-
-            //uintptr_t* pointerToData = reinterpret_cast<uint64_t*>(Player + 0x1D38);
-
-            //// Read 8 bytes from the address pointed to by the pointer
-            //uintptr_t data = *pointerToData;
-
-            //// Print the data in hexadecimal format
-            //std::cout << std::hex << data << "\n";
-        }
-
         if (Player == LocalPlayer)
             continue;
-
-       /* if (!(strstr(pName, target) != nullptr || strstr(pName, target2) != nullptr)) {
-            continue;
-        }*/
 
         // Team
         int Team = m.Read<int>(Player + offset::TeamID);
@@ -438,54 +409,14 @@ void Overlay::m_ESP()
 
         uint64_t clientVehicleEntity = m.Read<uint64_t>(Player + 0x1D38);
         bool inVehicle = false;
-        Vector3 vehiclePosition = Vector3(0, 0, 0);
-
+        
         bool horse = false;
-
-        if (strstr(pName, "ITEXPL") != nullptr) {
-            vehiclePosition = m.Read<Vector3>(clientSoldierEntity + 0x1D38 + 0x2c58);
-            //std::cout << vehiclePosition.x << " " << vehiclePosition.y << std::endl;
-        }
-
 
         //TODO SEARCH POSITION IN VEHICLE LOOP NOT HERE
         if (ValidPointer(clientVehicleEntity)) {
             inVehicle = true;
-            bool positionFound = false;
-            uint64_t positionAddressOffset = 0x30;
-            vehiclePosition = m.Read<Vector3>(clientSoldierEntity + 0x4680); // 0x1D38 + 0x2c58);// 0x3a98+0x180);
-
-            if (abs(vehiclePosition.x) < 3 && abs(vehiclePosition.y) < 3) {
-                while (positionFound == false) {
-                    vehiclePosition = m.Read<Vector3>(clientSoldierEntity + 0x4680 + positionAddressOffset);
-
-                    if (abs(vehiclePosition.x) > 10 && abs(vehiclePosition.x) < 888 && abs(vehiclePosition.y) > 10 && abs(vehiclePosition.y) < 888) {
-                        positionFound = true;
-                        //std::cout << "position: " << vehiclePosition.x << " " << vehiclePosition.y << std::endl;
-                        std::cout << std::hex << positionAddressOffset << std::endl;
-                    }
-                    positionAddressOffset += 0x30;
-
-                    if (positionAddressOffset > 0x3000)
-                        break;
-                }
-            }
-                    
-
-            /*if (abs(vehiclePosition.x) < 3 && abs(vehiclePosition.y) < 3)
-                vehiclePosition = m.Read<Vector3>(clientSoldierEntity + 0x1D38 + 0x2c58 + 0xa20);
-            if (abs(vehiclePosition.x) < 3 && abs(vehiclePosition.y) < 3) {
-                vehiclePosition = m.Read<Vector3>(clientSoldierEntity + 0x1290);
-                horse = true;
-            }*/
-
-            //if ((abs(vehiclePosition.x) < 3 && abs(vehiclePosition.y) < 3) || abs(vehiclePosition.x) > 900 || abs(vehiclePosition.y) > 900)
-             if(positionFound == false)
-                continue;
-                
-
+           
             bool vehicleExist = false;
-            WorldToScreen(vehiclePosition, vScreenPosition);
 
             for (VehiclePersonel& vec : vehicles) {
                 if (vec.id == clientSoldierEntity){//(vehiclePosition.x > vec.x - 1 && vehiclePosition.x < vec.x + 1 && vehiclePosition.y > vec.y - 1 && vehiclePosition.y < vec.y + 1) {
@@ -495,10 +426,10 @@ void Overlay::m_ESP()
             }
 
             if (vehicleExist == false) {
-                VehiclePersonel vehicle = { vehiclePosition.x, vehiclePosition.y, vehiclePosition.z };
+                VehiclePersonel vehicle = { 0,0,0 };
                 vehicle.addName(pName);
                 vehicle.id = clientSoldierEntity;
-                vehicle.screenPosition = vScreenPosition;
+                //vehicle.screenPosition = vScreenPosition;
 
                 if (horse)
                     vehicle.horse = true;
@@ -511,7 +442,7 @@ void Overlay::m_ESP()
 
         if (!inVehicle)
             continue;
-
+        /*
         // Position
         Vector3 Position = m.Read<Vector3>(clientSoldierEntity + offset::location);
 
@@ -522,7 +453,7 @@ void Overlay::m_ESP()
         if (Position == Vector3(0.f, 0.f, 0.f))
             continue;
         
-
+    
         // WorldToScreen
         Vector2 ScreenPosition = Vector2(0.f, 0.f);
         WorldToScreen(Position, ScreenPosition);
@@ -542,7 +473,7 @@ void Overlay::m_ESP()
             DrawLine(ImVec2(GameRect.right / 2.f, GameRect.bottom), ImVec2(ScreenPosition.x, ScreenPosition.y), color, 1.f);
 
         
-    /*
+    
         // Box—p
         Vector3 BoxTop = Position + GetAABB(clientSoldierEntity).Max;
         Vector3 BoxBottom = Position + GetAABB(clientSoldierEntity).Min;
@@ -595,38 +526,41 @@ void Overlay::m_ESP()
 
         }
         */
-        
-
-        if (false){ //(g.fovCircle) {
-            float time = ImGui::GetTime();
-
-            // Calculate RGB values with smooth transitions
-            int red = static_cast<int>((sinf(time) * 0.5f + 0.5f) * 255);
-            int green = static_cast<int>((cosf(time) * 0.5f + 0.5f) * 255);
-            int blue = static_cast<int>((sinf(time * 0.5f) * 0.5f + 0.5f) * 255);
-
-
-            ImU32 rgb_color = IM_COL32(red, green, blue, 255);
-            ImVec2 center(GameRect.right / 2.f, GameRect.bottom / 2.f);
-            ImGui::GetWindowDrawList()->AddCircle(center, g.fov, rgb_color, 64, 1.0f);
-
-        }
-       /* if (g.vHealth)
-            HealthBar(BoxMiddle - (Width / 2.f) - 4, ScreenPosition.y, 2.f, -Height, Health, 100.f);*/
-
-     /*   if (g.vDistance)
-        {
-            float distance = GetDistance(LocalPosition, Position);
-            vContext = std::to_string((int)distance) + "m";
-        }*/
-
-        //if (strstr(pName, target) != nullptr || strstr(pName, target2) != nullptr) //(g.vName)
 
     }
+
     std::string vContext;
 
     for (VehiclePersonel& vehicle : vehicles) {
         int nameOffset = 0;
+        bool positionFound = false;
+        uint64_t positionAddressOffset = 0x30;
+        Vector3 vehiclePosition = Vector3(0, 0, 0);
+        Vector2 vScreenPosition = Vector2(0.f, 0.f);
+
+        vehiclePosition = m.Read<Vector3>(vehicle.id + 0x4680); // 0x1D38 + 0x2c58);// 0x3a98+0x180);
+
+        if (abs(vehiclePosition.x) < 3 && abs(vehiclePosition.y) < 3) {
+            while (positionFound == false) {
+                vehiclePosition = m.Read<Vector3>(vehicle.id + 0x4680 + positionAddressOffset);
+
+                if (abs(vehiclePosition.x) > 10 && abs(vehiclePosition.x) < 888 && abs(vehiclePosition.y) > 10 && abs(vehiclePosition.y) < 888) {
+                    positionFound = true;
+                    //std::cout << "position: " << vehiclePosition.x << " " << vehiclePosition.y << std::endl;
+                    //std::cout << std::hex << positionAddressOffset << std::endl;
+                    break;
+                }
+                positionAddressOffset += 0x30;
+
+                if (positionAddressOffset > 0x3000)
+                    break;
+            }
+        }
+
+        if (positionFound == false)
+            continue;
+
+        WorldToScreen(vehiclePosition, vScreenPosition);
 
         for (std::string playerName : vehicle.names) {
             vContext = "";
@@ -635,28 +569,31 @@ void Overlay::m_ESP()
             ImVec2 textSize = ImGui::CalcTextSize(vContext.c_str());
             float TextCentor = textSize.x / 2.f;
 
-            String(ImVec2(vehicle.screenPosition.x - TextCentor, (vehicle.screenPosition.y + nameOffset)), ImColor(1.f, 1.f, 1.f, 1.f), vContext.c_str());
+            String(ImVec2(vScreenPosition.x - TextCentor, (vScreenPosition.y + nameOffset)), ImColor(1.f, 1.f, 1.f, 1.f), vContext.c_str());
             nameOffset += 20;
         }
 
-        Vector3 vBoxTop = Vector3(vehicle.x, vehicle.y, vehicle.z) + Vector4(0.350000f, 1.700000f, 0.350000f, 0);
-        Vector3 vBoxBottom = Vector3(vehicle.x, vehicle.y, vehicle.z) + Vector4(-0.350000f, 0.000000f, -0.350000f, 0);
+        
+
+        Vector3 vBoxTop = Vector3(vehiclePosition.x, vehiclePosition.y, vehiclePosition.z) + Vector4(0.350000f, 1.700000f, 0.350000f, 0);
+        Vector3 vBoxBottom = Vector3(vehiclePosition.x, vehiclePosition.y, vehiclePosition.z) + Vector4(-0.350000f, 0.000000f, -0.350000f, 0);
         Vector2 vvTop;
         Vector2 vvBom;
         WorldToScreen(vBoxTop, vvTop);
         WorldToScreen(vBoxBottom, vvBom);
 
-        float vBoxMiddle = vehicle.screenPosition.x;
+        float vBoxMiddle = vScreenPosition.x;
         float vHeight = vvBom.y - vvTop.y;
         float vWidth = vHeight / 2.f;
 
         DrawLine(ImVec2(vBoxMiddle + (vWidth / 2.f), vvTop.y), ImVec2(vBoxMiddle - (vWidth / 2.f), vvTop.y), ESP_Normal, 1.f);
-        //DrawLine(ImVec2(vBoxMiddle + (vWidth / 2.f), vehicle.screenPosition.y), ImVec2(vBoxMiddle - (vWidth / 2.f), vehicle.screenPosition.y), ESP_Normal, 1.f);
-        DrawLine(ImVec2(vBoxMiddle + (vWidth / 2.f), vvTop.y), ImVec2(vBoxMiddle + (vWidth / 2.f), vehicle.screenPosition.y), ESP_Normal, 1.f);
-        //DrawLine(ImVec2(vBoxMiddle - (vWidth / 2.f), vvTop.y), ImVec2(vBoxMiddle - (vWidth / 2.f), vehicle.screenPosition.y), ESP_Normal, 1.f);
+        DrawLine(ImVec2(vBoxMiddle + (vWidth / 2.f), vScreenPosition.y), ImVec2(vBoxMiddle - (vWidth / 2.f), vScreenPosition.y), ESP_Normal, 1.f);
+        DrawLine(ImVec2(vBoxMiddle + (vWidth / 2.f), vvTop.y), ImVec2(vBoxMiddle + (vWidth / 2.f), vScreenPosition.y), ESP_Normal, 1.f);
+        DrawLine(ImVec2(vBoxMiddle - (vWidth / 2.f), vvTop.y), ImVec2(vBoxMiddle - (vWidth / 2.f), vScreenPosition.y), ESP_Normal, 1.f);
        
 
     }
+
     updateCnt++;
 
     if (updateCnt > 150)
@@ -667,28 +604,3 @@ void Overlay::m_ESP()
 
     ImGui::End();
 }
-
-
-
-//D3DXVECTOR3 CalcSoldierFuturePos(D3DXVECTOR3 InVec)
-//{
-//    D3DXVECTOR3 NewPos;
-//
-//    if (WorldToScreen(InVec)) {
-//        NewPos.x = InVec.x;
-//        NewPos.y = InVec.y;
-//        NewPos.z = InVec.z;
-//    }
-//    else
-//    {
-//        NewPos.x = 0;
-//        NewPos.y = 0;
-//        NewPos.z = 0;
-//    }
-//    return NewPos;
-//}
-
-
-
-
-
