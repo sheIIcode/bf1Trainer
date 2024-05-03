@@ -442,25 +442,45 @@ void Overlay::m_ESP()
 
         bool horse = false;
 
-        if (strstr(pName, "ighty1") != nullptr) {
+        if (strstr(pName, "ITEXPL") != nullptr) {
             vehiclePosition = m.Read<Vector3>(clientSoldierEntity + 0x1D38 + 0x2c58);
             //std::cout << vehiclePosition.x << " " << vehiclePosition.y << std::endl;
         }
 
 
+        //TODO SEARCH POSITION IN VEHICLE LOOP NOT HERE
         if (ValidPointer(clientVehicleEntity)) {
             inVehicle = true;
-            vehiclePosition = m.Read<Vector3>(clientSoldierEntity + 0x1D38 + 0x2c58);// 0x3a98+0x180);
-            if (abs(vehiclePosition.x) < 3 && abs(vehiclePosition.y) < 3)
-                vehiclePosition = m.Read<Vector3>(clientSoldierEntity + 0x1D38 + 0x2c58 + 0x60);
-            if (abs(vehiclePosition.x) < 3 && abs(vehiclePosition.y) < 3)
+            bool positionFound = false;
+            uint64_t positionAddressOffset = 0x30;
+            vehiclePosition = m.Read<Vector3>(clientSoldierEntity + 0x4680); // 0x1D38 + 0x2c58);// 0x3a98+0x180);
+
+            if (abs(vehiclePosition.x) < 3 && abs(vehiclePosition.y) < 3) {
+                while (positionFound == false) {
+                    vehiclePosition = m.Read<Vector3>(clientSoldierEntity + 0x4680 + positionAddressOffset);
+
+                    if (abs(vehiclePosition.x) > 10 && abs(vehiclePosition.x) < 888 && abs(vehiclePosition.y) > 10 && abs(vehiclePosition.y) < 888) {
+                        positionFound = true;
+                        //std::cout << "position: " << vehiclePosition.x << " " << vehiclePosition.y << std::endl;
+                        std::cout << std::hex << positionAddressOffset << std::endl;
+                    }
+                    positionAddressOffset += 0x30;
+
+                    if (positionAddressOffset > 0x3000)
+                        break;
+                }
+            }
+                    
+
+            /*if (abs(vehiclePosition.x) < 3 && abs(vehiclePosition.y) < 3)
                 vehiclePosition = m.Read<Vector3>(clientSoldierEntity + 0x1D38 + 0x2c58 + 0xa20);
             if (abs(vehiclePosition.x) < 3 && abs(vehiclePosition.y) < 3) {
                 vehiclePosition = m.Read<Vector3>(clientSoldierEntity + 0x1290);
                 horse = true;
-            }
+            }*/
 
-            if ((abs(vehiclePosition.x) < 3 && abs(vehiclePosition.y) < 3) || abs(vehiclePosition.x) > 900 || abs(vehiclePosition.y) > 900)
+            //if ((abs(vehiclePosition.x) < 3 && abs(vehiclePosition.y) < 3) || abs(vehiclePosition.x) > 900 || abs(vehiclePosition.y) > 900)
+             if(positionFound == false)
                 continue;
                 
 

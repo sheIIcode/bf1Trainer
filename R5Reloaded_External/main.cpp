@@ -5,7 +5,7 @@
 
 Overlay Ov, * v = &Ov;
 bool Run = false;
-int MenuKey = VK_DELETE;
+int MenuKey = VK_F8;
 HWND GameHwnd = NULL;
 HWND OverlayHwnd = nullptr;
 Mouse* mouse = nullptr;
