@@ -207,7 +207,6 @@ void AimAtPosV2(float x, float y, float speed, float lock, bool smooth)
         //mouse->move(1, 1);
 }
 
-
 void aim(uint64_t clientSoldierEntity) {
 
     // Get Player
@@ -270,11 +269,9 @@ void aim(uint64_t clientSoldierEntity) {
 }
 
 struct VehiclePersonel {
-    uint64_t id;
-    float x, y, z;
+    uint64_t clientSoldierEntity;
     std::vector<std::string> names;
-    Vector2 screenPosition;
-    bool horse;
+    Vector3 position;
 
     void addName(const std::string& name) {
         names.push_back(name);
@@ -285,14 +282,13 @@ std::vector<VehiclePersonel> vehicles;
 
 void updateCoords() {
     system("cls");
-    for (VehiclePersonel& vec : vehicles) {
-        std::cout << vec.x << " " << vec.y << " " << vec.z << ": ";
-        for (std::string name : vec.names)
-            std::cout << name << " ";
-        std::cout << std::hex << vec.id ;
-        if (vec.horse)
-            std::cout << "    HORESE";
-        std::cout << std::endl;
+    for (VehiclePersonel& vehicle : vehicles) {
+        std::cout << vehicle.position.x << "\t" << vehicle.position.y << "\t" << vehicle.position.z << ":\n\t";
+        for (std::string name : vehicle.names)
+            std::cout << name << "\n\t";
+        std::cout << std::hex << vehicle.clientSoldierEntity ;
+
+        std::cout << " ===========================\n" << std::endl;
     }
 }
 
@@ -409,35 +405,27 @@ void Overlay::m_ESP()
 
         uint64_t clientVehicleEntity = m.Read<uint64_t>(Player + 0x1D38);
         bool inVehicle = false;
-        
-        bool horse = false;
 
-        //TODO SEARCH POSITION IN VEHICLE LOOP NOT HERE
+
         if (ValidPointer(clientVehicleEntity)) {
             inVehicle = true;
            
             bool vehicleExist = false;
 
             for (VehiclePersonel& vec : vehicles) {
-                if (vec.id == clientSoldierEntity){//(vehiclePosition.x > vec.x - 1 && vehiclePosition.x < vec.x + 1 && vehiclePosition.y > vec.y - 1 && vehiclePosition.y < vec.y + 1) {
+                if (vec.clientSoldierEntity == clientSoldierEntity){//(vehiclePosition.x > vec.x - 1 && vehiclePosition.x < vec.x + 1 && vehiclePosition.y > vec.y - 1 && vehiclePosition.y < vec.y + 1) {
                     vehicleExist = true;
                     vec.addName(pName);
                 }
             }
 
             if (vehicleExist == false) {
-                VehiclePersonel vehicle = { 0,0,0 };
+                VehiclePersonel vehicle = {};
                 vehicle.addName(pName);
-                vehicle.id = clientSoldierEntity;
-                //vehicle.screenPosition = vScreenPosition;
-
-                if (horse)
-                    vehicle.horse = true;
+                vehicle.clientSoldierEntity = clientSoldierEntity;
 
                 vehicles.push_back(vehicle);
             }
-            
-            //std::cout << vehiclePosition.x << " " << vehiclePosition.y<<  " || "<< LocalPosition.x << " " << LocalPosition.y << std::endl;
         }
 
         if (!inVehicle)
@@ -526,7 +514,6 @@ void Overlay::m_ESP()
 
         }
         */
-
     }
 
     std::string vContext;
@@ -538,16 +525,14 @@ void Overlay::m_ESP()
         Vector3 vehiclePosition = Vector3(0, 0, 0);
         Vector2 vScreenPosition = Vector2(0.f, 0.f);
 
-        vehiclePosition = m.Read<Vector3>(vehicle.id + 0x4680); // 0x1D38 + 0x2c58);// 0x3a98+0x180);
+        vehiclePosition = m.Read<Vector3>(vehicle.clientSoldierEntity + 0x4680);
 
         if (abs(vehiclePosition.x) < 3 && abs(vehiclePosition.y) < 3) {
             while (positionFound == false) {
-                vehiclePosition = m.Read<Vector3>(vehicle.id + 0x4680 + positionAddressOffset);
+                vehiclePosition = m.Read<Vector3>(vehicle.clientSoldierEntity + 0x4680 + positionAddressOffset);
 
                 if (abs(vehiclePosition.x) > 10 && abs(vehiclePosition.x) < 888 && abs(vehiclePosition.y) > 10 && abs(vehiclePosition.y) < 888) {
                     positionFound = true;
-                    //std::cout << "position: " << vehiclePosition.x << " " << vehiclePosition.y << std::endl;
-                    //std::cout << std::hex << positionAddressOffset << std::endl;
                     break;
                 }
                 positionAddressOffset += 0x30;
@@ -559,6 +544,8 @@ void Overlay::m_ESP()
 
         if (positionFound == false)
             continue;
+
+        vehicle.position = vehiclePosition;
 
         WorldToScreen(vehiclePosition, vScreenPosition);
 
@@ -572,8 +559,6 @@ void Overlay::m_ESP()
             String(ImVec2(vScreenPosition.x - TextCentor, (vScreenPosition.y + nameOffset)), ImColor(1.f, 1.f, 1.f, 1.f), vContext.c_str());
             nameOffset += 20;
         }
-
-        
 
         Vector3 vBoxTop = Vector3(vehiclePosition.x, vehiclePosition.y, vehiclePosition.z) + Vector4(0.350000f, 1.700000f, 0.350000f, 0);
         Vector3 vBoxBottom = Vector3(vehiclePosition.x, vehiclePosition.y, vehiclePosition.z) + Vector4(-0.350000f, 0.000000f, -0.350000f, 0);
@@ -590,8 +575,6 @@ void Overlay::m_ESP()
         DrawLine(ImVec2(vBoxMiddle + (vWidth / 2.f), vScreenPosition.y), ImVec2(vBoxMiddle - (vWidth / 2.f), vScreenPosition.y), ESP_Normal, 1.f);
         DrawLine(ImVec2(vBoxMiddle + (vWidth / 2.f), vvTop.y), ImVec2(vBoxMiddle + (vWidth / 2.f), vScreenPosition.y), ESP_Normal, 1.f);
         DrawLine(ImVec2(vBoxMiddle - (vWidth / 2.f), vvTop.y), ImVec2(vBoxMiddle - (vWidth / 2.f), vScreenPosition.y), ESP_Normal, 1.f);
-       
-
     }
 
     updateCnt++;
